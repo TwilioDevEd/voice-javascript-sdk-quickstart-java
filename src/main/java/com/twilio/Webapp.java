@@ -103,6 +103,11 @@ public class Webapp {
         // Log all requests and responses
         afterAfter(new LoggingFilter());
 
+        get("/twilio.min.js", (request, response) -> {
+            response.redirect("/node_modules/@twilio/voice-sdk/dist/twilio.min.js");
+            return response;
+        });
+
         // Create a capability token using our Twilio credentials
         get("/token", "application/json", (request, response) -> {
             // Generate a random username for the connecting client
