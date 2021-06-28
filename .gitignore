@@ -57,3 +57,5 @@ nb-configuration.xml
 
 # STS (Spring Tool Suite)
 .springBeans
+
+node_modules/
