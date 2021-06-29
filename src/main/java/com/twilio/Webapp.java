@@ -72,10 +72,18 @@ public class Webapp {
         return builder.client(new Client.Builder(to).build());
     }
     
-    public static String createVoiceResponse(String to) {
+    public static String createVoiceResponse(String to, String identity) {
         VoiceResponse voiceTwimlResponse;
-        
-        if (to != null) {
+        if (to == System.getenv("TWILIO_CALLER_ID")) {
+            System.out.println("In first condition");
+            Client client = new Client.Builder(identity).build();
+            Dial dial = new Dial.Builder().client(client).build();
+            voiceTwimlResponse = new VoiceResponse.Builder().dial(dial).build();
+        }
+        else if (to != null) {
+            System.out.println("In condition where to != null");
+            System.out.println(to);
+            System.out.println(identity);
             Dial.Builder dialBuilder = new Dial.Builder()
                     .callerId(System.getenv("TWILIO_CALLER_ID"));
 
@@ -108,22 +116,30 @@ public class Webapp {
             return response;
         });
 
+        // Creating an in-memory store to keep track of the most recent identity,
+        // so we can route incoming calls to the most recent browser device created.
+        String[] identity = {""};
+
         // Create a capability token using our Twilio credentials
         get("/token", "application/json", (request, response) -> {
             // Generate a random username for the connecting client
-            String identity = Webapp.generateIdentity();
+            String randomIdentity = Webapp.generateIdentity();
+            identity[0] = randomIdentity;
 
             // Render JSON response
             response.header("Content-Type", "application/json");
-            return Webapp.createJsonAccessToken(identity);
+            return Webapp.createJsonAccessToken(identity[0]);
         });
 
         // Generate voice TwiML
         post("/voice", "application/x-www-form-urlencoded", (request, response) -> {
             String to = request.queryParams("To");
+            if (to != null) {
+                to = request.queryParams("phone");
+            }
 
             response.header("Content-Type", "text/xml");
-            return Webapp.createVoiceResponse(to);
+            return Webapp.createVoiceResponse(to, identity[0]);
         });
     }
 }
