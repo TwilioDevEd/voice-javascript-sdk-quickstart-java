@@ -1,25 +1,23 @@
 package com.twilio;
 
-import static spark.Spark.get;
-import static spark.Spark.post;
-import static spark.Spark.port;
-import static spark.Spark.staticFileLocation;
 import static spark.Spark.afterAfter;
+import static spark.Spark.get;
+import static spark.Spark.port;
+import static spark.Spark.post;
+import static spark.Spark.staticFileLocation;
 
 import java.util.HashMap;
 
 import com.github.javafaker.Faker;
 import com.google.gson.Gson;
-
 // Token generation imports
 import com.twilio.jwt.accesstoken.AccessToken;
 import com.twilio.jwt.accesstoken.VoiceGrant;
-
 // TwiML generation imports
 import com.twilio.twiml.VoiceResponse;
+import com.twilio.twiml.voice.Client;
 import com.twilio.twiml.voice.Dial;
 import com.twilio.twiml.voice.Number;
-import com.twilio.twiml.voice.Client;
 import com.twilio.twiml.voice.Say;
 
 public class Webapp {
@@ -74,13 +72,13 @@ public class Webapp {
     
     public static String createVoiceResponse(String to, String identity) {
         VoiceResponse voiceTwimlResponse;
-        if (to == System.getenv("TWILIO_CALLER_ID")) {
+        if (to != null && to.equals(System.getenv("TWILIO_CALLER_ID"))) {
             System.out.println("In first condition");
             Client client = new Client.Builder(identity).build();
             Dial dial = new Dial.Builder().client(client).build();
             voiceTwimlResponse = new VoiceResponse.Builder().dial(dial).build();
         }
-        else if (to != null) {
+        else if (to != null && !to.isEmpty()) {
             System.out.println("In condition where to != null");
             System.out.println(to);
             System.out.println(identity);
@@ -134,8 +132,8 @@ public class Webapp {
         // Generate voice TwiML
         post("/voice", "application/x-www-form-urlencoded", (request, response) -> {
             String to = request.queryParams("To");
-            if (to != null) {
-                to = request.queryParams("phone");
+            if (to == null || to.isEmpty()) {
+            	to = request.queryParams("phone");
             }
 
             response.header("Content-Type", "text/xml");
